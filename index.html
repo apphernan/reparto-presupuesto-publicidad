@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reparte tu presupuesto publicitario</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = { darkMode: 'class' };
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  .clamp3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  input[type=range] { accent-color: #4f46e5; }
+  .dark input[type=range] { accent-color: #818cf8; }
+  .card-zero { opacity: .72; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors min-h-screen">
+
+<!-- Botón modo oscuro -->
+<button id="themeBtn" type="button" aria-label="Activar modo oscuro" title="Activar modo oscuro"
+  class="fixed top-3 right-3 sm:top-5 sm:right-5 z-50 w-12 h-12 rounded-full shadow-lg bg-slate-900 text-yellow-300 dark:bg-yellow-300 dark:text-slate-900 flex items-center justify-center text-xl hover:scale-105 transition">
+  <i id="themeIcon" class="fa-solid fa-moon"></i>
+</button>
+
+<header class="bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 text-white">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 pr-20">
+    <p class="uppercase tracking-widest text-xs sm:text-sm text-indigo-100 font-semibold">Planificador orientativo</p>
+    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold mt-2 leading-tight">¿Cómo repartir tu presupuesto de publicidad online?</h1>
+    <p class="mt-3 max-w-2xl text-indigo-50 text-base sm:text-lg">Elige qué vendes, indica cuánto quieres invertir y te proponemos un reparto entre plataformas basado en estudios del sector. Después puedes ajustarlo a tu gusto.</p>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 pb-16 space-y-8">
+
+  <!-- Aviso -->
+  <div role="note" class="rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:border-amber-700 dark:text-amber-100 p-4 sm:p-5 shadow-sm flex gap-3">
+    <i class="fa-solid fa-triangle-exclamation text-xl mt-0.5"></i>
+    <p class="text-sm sm:text-base"><strong>Recomendación orientativa.</strong> Los porcentajes son una sugerencia elaborada a partir de estudios públicos y estimaciones razonadas. En ningún caso esta herramienta indica que debas repartir tu presupuesto así de forma obligatoria o definitiva: cada negocio es distinto y conviene probar, medir y ajustar.</p>
+  </div>
+
+  <!-- Formulario -->
+  <section class="rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-5 sm:p-7">
+    <form id="form" class="grid gap-5 md:grid-cols-2" novalidate>
+      <div class="md:col-span-1">
+        <label for="product" class="block font-semibold mb-1.5">1. ¿Qué vendes?</label>
+        <select id="product" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="">Elige un tipo de producto o servicio…</option>
+        </select>
+        <div id="otherWrap" class="mt-3" hidden>
+          <label for="otherText" class="block text-sm font-medium mb-1">¿Cuál es tu producto o servicio?</label>
+          <input id="otherText" type="text" maxlength="80" placeholder="Por ejemplo: alquiler de bicicletas"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+      </div>
+      <div>
+        <label for="budget" class="block font-semibold mb-1.5">2. Presupuesto total de publicidad</label>
+        <div class="relative">
+          <input id="budget" type="number" inputmode="decimal" min="0" step="any" placeholder="Por ejemplo: 3000"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">€</span>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Importe total en euros para el periodo que quieras (mes, campaña, año…).</p>
+      </div>
+      <div class="md:col-span-2 flex flex-wrap items-center gap-3">
+        <button type="submit" class="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 shadow transition">
+          <i class="fa-solid fa-chart-simple mr-2"></i>Ver reparto recomendado
+        </button>
+        <p id="formError" class="text-sm text-red-600 dark:text-red-400" hidden></p>
+      </div>
+    </form>
+  </section>
+
+  <!-- Resultado -->
+  <section id="result" hidden class="space-y-6">
+    <div class="rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-5 sm:p-7">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold" id="resTitle"></h2>
+          <p class="text-slate-600 dark:text-slate-300 mt-1" id="resSummary"></p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-slate-500 dark:text-slate-400">Total asignado</p>
+          <p class="text-2xl font-extrabold"><span id="totalPct">100</span> % · <span id="totalEur"></span></p>
+        </div>
+      </div>
+      <div id="dataNote" class="mt-4 rounded-xl p-3 text-sm"></div>
+      <div class="mt-6 relative h-[500px] sm:h-[540px]">
+        <canvas id="chart" aria-label="Gráfico de barras horizontales con el reparto por plataforma" role="img"></canvas>
+      </div>
+    </div>
+
+    <div class="rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900 p-4 sm:p-5 text-sm flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+      <p><i class="fa-solid fa-sliders mr-1.5 text-indigo-600 dark:text-indigo-300"></i><strong>Ajuste manual:</strong> mueve la barra o escribe un porcentaje. Las demás plataformas activas se reajustan <em>en proporción a su peso actual</em> para que el total sea siempre 100 %. Las que están en 0 % se quedan en 0 % salvo que tú las subas. Con el candado <i class="fa-solid fa-lock"></i> fijas una plataforma para que no cambie.</p>
+      <button id="resetBtn" type="button" class="shrink-0 rounded-xl border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 px-4 py-2 font-semibold hover:bg-indigo-100 dark:hover:bg-slate-800 transition">
+        <i class="fa-solid fa-rotate-left mr-1.5"></i>Restablecer recomendación
+      </button>
+    </div>
+
+    <div id="cards" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+  </section>
+
+  <!-- Metodología -->
+  <section class="rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-5 sm:p-7">
+    <h2 class="text-xl font-bold mb-3"><i class="fa-solid fa-flask mr-2 text-indigo-600 dark:text-indigo-300"></i>Cómo se calculan las recomendaciones</h2>
+    <div class="space-y-2 text-sm sm:text-base text-slate-700 dark:text-slate-300">
+      <p>El punto de partida es el reparto real del mercado digital español en 2025 según IAB Spain y PwC: <strong>Search 32,1 %</strong> y <strong>Redes Sociales 29,5 %</strong> de la inversión digital, seguidos de display y vídeo [1]. La parte de búsqueda se reparte entre Google y Microsoft según su cuota de búsquedas en España [4], y la parte social según la audiencia publicitaria de cada red en España [3].</p>
+      <p>Sobre esa base se ajusta cada tipo de producto con datos indirectos: coste por contacto por sector en búsqueda [6], presupuestos B2B por plataforma [5], peso del retail media y de Amazon [8][9], uso de redes en España [7][14], la llegada de anuncios a WhatsApp [15] y audio digital [1].</p>
+      <p><strong>Importante:</strong> no existe un estudio público que publique el reparto por plataforma para cada tipo de producto en España. Por eso casi todas las combinaciones son <strong>estimaciones razonadas a partir de datos indirectos</strong>, y así se indica en cada resultado. Solo los perfiles B2B se apoyan en un dato directo de reparto de presupuesto, aunque de una muestra internacional [5].</p>
+      <p>Para Latinoamérica: IAB México señala que los anuncios en redes sociales lideran el mix de inversión digital en ese país [10], por lo que allí puede tener sentido dar algo más de peso a Facebook, Instagram y TikTok.</p>
+    </div>
+  </section>
+
+  <!-- Fuentes -->
+  <section class="rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-5 sm:p-7">
+    <h2 class="text-xl font-bold mb-3"><i class="fa-solid fa-book-open mr-2 text-indigo-600 dark:text-indigo-300"></i>Fuentes consultadas</h2>
+    <ol id="sources" class="space-y-2 text-sm list-decimal pl-5"></ol>
+  </section>
+
+  <p class="text-center text-xs text-slate-500 dark:text-slate-400">Herramienta orientativa e independiente. No está afiliada a ninguna de las plataformas mencionadas; los logotipos pertenecen a sus respectivos propietarios.</p>
+</main>
+
+<script>
+/* ===================== FUENTES ===================== */
+const SOURCES = [
+  { id: 1, name: 'IAB Spain y PwC — Estudio de Inversión Publicitaria en Medios Digitales 2026 (datos de 2025)', url: 'https://iabspain.es/estudio/estudio-inversion-publicitaria-medios-digitales-2026/', note: 'Total digital 6.211,2 M€; Search 1.992,6 M€ (32,1 %), Redes Sociales 1.832,5 M€ (29,5 %), vídeo display 535,2 M€, audio digital 144,4 M€.' },
+  { id: 2, name: 'PPC Land — Resumen detallado del estudio IAB Spain 2026 por disciplinas', url: 'https://ppc.land/spains-digital-ad-market-hits-eu6-2bn-and-ctv-just-changed-everything/', note: 'Desglose de las cifras del estudio [1] por disciplina y crecimiento.' },
+  { id: 3, name: 'DataReportal (We Are Social y Meltwater) — Digital 2025: Spain', url: 'https://datareportal.com/reports/digital-2025-spain', note: 'Audiencia publicitaria en España: YouTube 39,7 M; Instagram 24,8 M; LinkedIn 22,0 M (miembros); Facebook 20,4 M; TikTok 19,0 M (18+); X 10,4 M; Pinterest 9,78 M.' },
+  { id: 4, name: 'StatCounter — Cuota de mercado de buscadores en España', url: 'https://gs.statcounter.com/search-engine-market-share/all/spain', note: 'Google ≈ 92 %, Bing ≈ 4 % (≈ 8 % en escritorio).' },
+  { id: 5, name: 'Dreamdata — LinkedIn Ads Benchmarks Report 2026 (datos de 2025)', url: 'https://dreamdata.io/linkedin-ads-b2b-benchmarks', note: 'Presupuestos B2B de pago: Red de Google 46 % (incluye YouTube), LinkedIn 41 %, Meta 8 %, otros 5 %. Muestra internacional de clientes.' },
+  { id: 6, name: 'LocaliQ (WordStream) — Search Advertising Benchmarks por sector', url: 'https://localiq.com/blog/search-advertising-benchmarks/', note: 'Coste por contacto medio en búsqueda: 70,11 $; de 28,50 $ (automoción) a 131,63 $ (legal). Datos de EE. UU.' },
+  { id: 7, name: 'IAB Spain y Elogia — Estudio de Redes Sociales 2025 (resumen de Marketing4eCommerce)', url: 'https://marketing4ecommerce.net/estudio-redes-sociales-en-espana-2025/', note: 'Uso de redes en España: WhatsApp, Instagram y YouTube a la cabeza; X en retroceso; TikTok al alza.' },
+  { id: 8, name: 'Marketing Directo — El crecimiento del retail media en Europa (datos de IAB Europe)', url: 'https://www.marketingdirecto.com/especiales/dmexco/crecimiento-retail-media-europa-ralentiza', note: 'Amazon concentra el 74,1 % del retail media europeo (2024); España crece más de un 23 %.' },
+  { id: 9, name: 'Pinterest Newsroom — Pinterest amplía las funciones de compra a más países (incluida España)', url: 'https://newsroom.pinterest.com/es/news/pinterest-expands-shopping-to-more-countries/', note: 'Compras desde pines, tableros y Lens en España desde 2021, con foco en moda y hogar.' },
+  { id: 10, name: 'Insider Latam — Formatos digitales dominan la inversión publicitaria en México según IAB México', url: 'https://insiderlatam.com/?p=113023', note: 'Digital alcanzará el 57 % de la inversión en México en 2025; los Social Ads lideran el mix.' },
+  { id: 11, name: 'Microsoft Advertising — Expansión de Microsoft Audience Ads (incluye España)', url: 'https://about.ads.microsoft.com/en/blog/post/january-2022/microsoft-audience-ads-expansion-and-other-updates-for-january', note: 'Anuncios nativos en MSN, Outlook y Edge disponibles en España.' },
+  { id: 12, name: 'eMarketer — La expansión global de Reddit y su potencial publicitario internacional', url: 'https://www.emarketer.com/content/reddit-s-global-expansion-highlights-untapped-international-revenue-potential', note: 'Reddit amplía traducción automática y mercados; monetización internacional aún incipiente.' },
+  { id: 13, name: 'InfoAdex — Resumen del Estudio InfoAdex de la Inversión Publicitaria en España 2025', url: 'https://infoadex.es/wp-content/uploads/2025/02/Resumen-Estudio-InfoAdex-2025OK.pdf', note: 'Contexto del mercado publicitario total en España (13.080,8 M€ en 2024).' },
+  { id: 14, name: 'IAB Spain — Estudio de Redes Sociales 2026 (resumen de PPC Land)', url: 'https://ppc.land/spains-social-media-users-jump-to-7-2-platforms-but-42-quit-at-least-one/', note: 'Penetración mensual: WhatsApp 94 %, Instagram 77 %, Facebook 56 %. En Facebook, Gen X y boomers suman el 62 % de la base. Los profesionales sitúan en Instagram casi la mitad de la inversión social.' },
+  { id: 15, name: 'Xataka Móvil — La publicidad llega a WhatsApp (anuncios en la pestaña Novedades)', url: 'https://www.xatakamovil.com/aplicaciones/publicidad-llega-a-whatsapp-meta-anade-anuncios-unica-app-que-todavia-se-salvaba', note: 'Desde junio de 2025 Meta añade anuncios en Estados y canales promocionados en WhatsApp, pensados para iniciar conversaciones con empresas.' }
+];
+
+/* ===================== PLATAFORMAS ===================== */
+const PLATFORMS = [
+  { key: 'google',    name: 'Google Ads',               icon: 'fa-brands fa-google',       color: '#4285F4', src: [1,4,6] },
+  { key: 'facebook',  name: 'Facebook',                 icon: 'fa-brands fa-facebook-f',   color: '#0866FF', src: [3,14] },
+  { key: 'instagram', name: 'Instagram',                icon: 'fa-brands fa-instagram',    color: '#E1306C', src: [3,14] },
+  { key: 'whatsapp',  name: 'WhatsApp Business',        icon: 'fa-brands fa-whatsapp',     color: '#25D366', src: [14,15] },
+  { key: 'youtube',   name: 'YouTube',                  icon: 'fa-brands fa-youtube',      color: '#FF0000', src: [1,3] },
+  { key: 'tiktok',    name: 'TikTok',                   icon: 'fa-brands fa-tiktok',       color: '#FE2C55', src: [3,7] },
+  { key: 'linkedin',  name: 'LinkedIn',                 icon: 'fa-brands fa-linkedin',     color: '#0A66C2', src: [3,5] },
+  { key: 'x',         name: 'X',                        icon: 'fa-brands fa-x-twitter',    color: '#6B7280', src: [3,7] },
+  { key: 'microsoft', name: 'Microsoft Advertising',    icon: 'fa-brands fa-microsoft',    color: '#00A4EF', src: [4,11] },
+  { key: 'pinterest', name: 'Pinterest',                icon: 'fa-brands fa-pinterest',    color: '#E60023', src: [3,9] },
+  { key: 'amazon',    name: 'Amazon Ads',               icon: 'fa-brands fa-amazon',       color: '#FF9900', src: [8] },
+  { key: 'reddit',    name: 'Reddit',                   icon: 'fa-brands fa-reddit-alien', color: '#FF4500', src: [12] },
+  { key: 'spotify',   name: 'Spotify Ads',              icon: 'fa-brands fa-spotify',      color: '#1DB954', src: [1] }
+];
+
+/* Explicación genérica cuando la plataforma recibe presupuesto */
+const GENERIC = {
+  google:    'Captura demanda activa: gente que ya busca lo que ofreces. Search es la primera partida digital en España (32,1 %) y Google concentra cerca del 92 % de las búsquedas.',
+  facebook:  'Audiencia publicitaria de 20,4 M en España con perfil más adulto (Gen X y boomers son el 62 % de su base). Útil para segmentar por intereses y zona, y para remarketing.',
+  instagram: 'La mayor audiencia social publicitaria de España (24,8 M) y segunda red favorita. Ideal para producto visual, Reels y Stories, y públicos jóvenes.',
+  whatsapp:  'Llega al 94 % de los usuarios de redes en España. Los anuncios que abren un chat y los de Estados (desde 2025) se gestionan desde Meta y sirven para vender conversando.',
+  youtube:   'Es la plataforma con más alcance publicitario en España (39,7 M). El vídeo aporta notoriedad y consideración; el vídeo display creció un 7,9 % en 2025.',
+  tiktok:    '19 M de adultos alcanzables en España y uso al alza. Encaja con productos visuales y públicos jóvenes; exige creatividades nativas en vídeo vertical.',
+  linkedin:  'Segmenta por cargo, sector y empresa (22 M de miembros en España). Clic caro, pero es el canal B2B con mejor retorno según Dreamdata.',
+  x:         'Audiencia publicitaria menor (10,4 M) y uso en retroceso según IAB Spain. Partida pequeña para conversación en tiempo real, lanzamientos o actualidad.',
+  microsoft: 'Bing tiene ~4 % de las búsquedas en España (~8 % en escritorio). Complemento de Google, con menos competencia y público adulto y de oficina.',
+  pinterest: 'Buscador visual de inspiración (9,78 M alcanzables en España) con compras desde pines. Rinde sobre todo en moda, hogar, belleza y recetas.',
+  amazon:    'Retail media: anuncias justo donde se compra. Amazon concentra el 74,1 % del retail media europeo. Tiene sentido si vendes tus productos en Amazon.',
+  reddit:    'Comunidades por temas con traducción automática en expansión, pero sin datos de audiencia publicitaria en España: solo como prueba pequeña.',
+  spotify:   'Audio digital: 144,4 M€ en España en 2025 (+8,5 %). Formato de notoriedad y frecuencia, complementario al resto.'
+};
+
+/* Explicación genérica cuando la plataforma queda en 0 % */
+const ZERO = {
+  google:    'No se asigna presupuesto para este caso.',
+  facebook:  'Su público es más adulto y menos afín a este producto; se prioriza Instagram.',
+  instagram: 'Para este tipo de servicio se prioriza Facebook, con un público más adulto.',
+  whatsapp:  'La venta por chat aporta poco para este tipo de producto o de cliente.',
+  youtube:   'El vídeo de notoriedad no es prioritario con este tipo de producto frente a canales de respuesta directa.',
+  tiktok:    'Su público y formato (entretenimiento en vídeo corto) encajan poco con la decisión de compra de este tipo de servicio.',
+  linkedin:  'Su segmentación profesional y su clic caro no compensan para un producto o servicio dirigido a consumidores.',
+  x:         'Audiencia reducida y en retroceso en España; no aporta frente a otras redes para este tipo de producto.',
+  microsoft: 'Cuota de búsqueda muy baja en España para este uso; mejor concentrar la búsqueda en Google.',
+  pinterest: 'Su audiencia busca inspiración visual (moda, hogar, recetas); no encaja con este tipo de producto o servicio.',
+  amazon:    'Amazon Ads solo sirve para productos que se venden dentro de Amazon; no aplica a este tipo de negocio.',
+  reddit:    'Sin datos de audiencia publicitaria en España y poco encaje con este público; no se recomienda aquí.',
+  spotify:   'El audio de notoriedad no es prioritario para este tipo de negocio o presupuesto.'
+};
+
+/* ===================== TIPOS DE PRODUCTO ===================== */
+/* Orden de porcentajes: google, facebook, instagram, whatsapp, youtube, tiktok, linkedin, x, microsoft, pinterest, amazon, reddit, spotify */
+const DIRECT_B2B = 'Basado en un <strong>dato directo</strong> de reparto de presupuestos B2B (Dreamdata, muestra internacional) [5], adaptado a España con datos de audiencia [3][4]. El resto son estimaciones razonadas.';
+const ESTIMATE = 'Todas las cifras de este perfil son <strong>estimaciones razonadas a partir de datos indirectos</strong> (reparto del mercado español, audiencias y benchmarks sectoriales). No hay un estudio público con el reparto por plataforma para este tipo de producto.';
+
+const PRODUCTS = [
+  { id: 'moda', name: 'Moda, calzado y complementos', type: 'estimate',
+    p: [22,9,20,3,8,15,0,1,2,8,10,0,2],
+    n: { instagram: 'Instagram es el escaparate natural de la moda: catálogo, Reels y Stories. Los profesionales le atribuyen casi la mitad de la inversión social en España.',
+         facebook: 'Complementa a Instagram con públicos de más edad y anuncios de catálogo dinámico para remarketing.',
+         whatsapp: 'Anuncios que abren un chat para resolver tallas, stock o envíos antes de comprar.',
+         tiktok: 'La moda es de los sectores más visuales; TikTok (19 M de adultos en España) impulsa tendencias y descubrimiento de producto.',
+         google: 'Google Shopping y búsquedas de marca o prenda concreta capturan a quien ya quiere comprar.',
+         pinterest: 'Pinterest destaca en moda: búsqueda visual y compras desde pines disponibles en España desde 2021.',
+         amazon: 'Si vendes en Amazon, el retail media te pone delante del comprador en el momento de decidir.' } },
+  { id: 'belleza', name: 'Belleza, cosmética y cuidado personal', type: 'estimate',
+    p: [22,9,20,3,10,16,0,1,2,7,8,0,2],
+    n: { instagram: 'Instagram concentra prescriptores y contenido de belleza, y es la segunda red favorita en España (21 %, IAB Spain 2026).',
+         tiktok: 'Tutoriales y reseñas en vídeo corto mueven la compra de cosmética; los influencers crecieron un 25,9 % en 2025.',
+         youtube: 'Las reseñas y tutoriales largos en YouTube ayudan en productos de mayor precio.' } },
+  { id: 'electronica', name: 'Electrónica y tecnología de consumo', type: 'estimate',
+    p: [32,9,8,1,14,8,0,2,4,0,18,3,1],
+    n: { google: 'Compra muy comparada: la gente busca modelo, precio y opiniones. Search y Shopping son la base.',
+         amazon: 'La electrónica es una categoría fuerte en marketplaces; Amazon domina el retail media europeo (74,1 %).',
+         youtube: 'Las reviews y unboxing en vídeo influyen en la decisión de compra tecnológica.',
+         reddit: 'Comunidades técnicas activas, pero sin datos de audiencia en España: prueba pequeña.',
+         pinterest: 'Su uso se centra en inspiración de moda, hogar y recetas; la tecnología encaja poco.' } },
+  { id: 'hogar', name: 'Hogar, decoración y muebles', type: 'estimate',
+    p: [28,11,13,2,8,8,0,0,3,14,12,0,1],
+    n: { pinterest: 'Decoración es una de las categorías centrales de Pinterest, un buscador visual que la gente usa para planificar su casa.',
+         google: 'Búsquedas de producto concreto y Shopping. En búsqueda, el contacto en muebles es de los más caros (121,51 $ según LocaliQ).',
+         instagram: 'Inspiración visual de decoración con Reels y carruseles, enlazados al catálogo de producto.',
+         facebook: 'Público adulto que amuebla o reforma su casa; los anuncios de catálogo funcionan bien.',
+         amazon: 'Útil si vendes en Amazon menaje, textil o pequeño mobiliario.' } },
+  { id: 'alimentacion', name: 'Alimentación, bebidas y gran consumo', type: 'estimate',
+    p: [18,13,15,2,16,14,0,2,2,4,8,0,6],
+    n: { facebook: 'Gran consumo necesita alcance y frecuencia; Facebook aporta cobertura en públicos adultos (Gen X y boomers, 62 % de su base).',
+         instagram: 'Recetas, producto y vídeo corto dan visibilidad de marca a públicos más jóvenes.',
+         youtube: 'El vídeo es clave para marcas de consumo: YouTube es la plataforma con más alcance publicitario (39,7 M).',
+         spotify: 'El audio digital (144,4 M€ en 2025) aporta frecuencia a bajo coste en marcas de consumo masivo.',
+         google: 'La gente busca menos marcas de gran consumo que otros productos; Search pesa menos que en otros sectores.' } },
+  { id: 'restauracion', name: 'Restauración, bares y hostelería local', type: 'estimate',
+    p: [40,14,18,8,5,12,0,0,3,0,0,0,0],
+    n: { google: 'Búsquedas "cerca de mí" y en Google Maps: es donde la gente decide dónde comer.',
+         instagram: 'Fotos de platos y ambiente segmentando por zona: Instagram pesa mucho al decidir dónde comer.',
+         facebook: 'Llega al público local de más edad y a quien ya sigue la página del local.',
+         whatsapp: 'Anuncios que abren un chat para reservar mesa o hacer pedidos sin pasar por la web.',
+         tiktok: 'El contenido gastronómico funciona en TikTok, también a nivel local.',
+         amazon: 'No aplica: un restaurante no vende sus servicios a través de Amazon.' } },
+  { id: 'turismo', name: 'Turismo, viajes y alojamiento', type: 'estimate',
+    p: [38,9,13,4,12,8,0,2,5,5,0,2,2],
+    n: { google: 'El viajero busca destino, fechas y precio: Search es la base del sector turístico.',
+         instagram: 'Inspiración de destinos y remarketing a quien visitó tu web sin reservar.',
+         whatsapp: 'Resolver por chat dudas de disponibilidad y precio acerca la reserva.',
+         microsoft: 'Bing aporta búsquedas desde escritorio, donde se planifican muchos viajes, con menos competencia.',
+         amazon: 'Los viajes y alojamientos no se venden en Amazon.' } },
+  { id: 'b2b', name: 'Servicios profesionales para empresas (B2B)', type: 'direct',
+    p: [40,4,2,2,6,0,41,0,5,0,0,0,0],
+    n: { linkedin: 'Dreamdata: LinkedIn se lleva el 41 % del presupuesto B2B y es el canal con mejor retorno (121 %). Segmenta por cargo y sector.',
+         google: 'La red de Google (búsqueda, display y YouTube) suma el 46 % del presupuesto B2B según Dreamdata; aquí 40 % búsqueda.',
+         facebook: 'Dreamdata sitúa a Meta (Facebook, Instagram, WhatsApp) en el 8 % del gasto B2B, sobre todo para remarketing.',
+         whatsapp: 'Útil con pymes y autónomos que prefieren el chat al formulario de contacto.',
+         youtube: 'Parte del 46 % de la red de Google en B2B: vídeo para dar a conocer el servicio.',
+         microsoft: 'Bing gana peso en escritorio (~8 % en España), donde trabajan los profesionales.' } },
+  { id: 'saas', name: 'Software y SaaS para empresas', type: 'direct',
+    p: [38,4,3,1,5,0,41,1,5,0,0,2,0],
+    n: { linkedin: 'Dreamdata: LinkedIn concentra el 41 % del gasto B2B con un retorno del 121 %, superior a Google y Meta.',
+         google: 'Búsquedas de "software para…" y comparativas; la red de Google suma el 46 % del gasto B2B.',
+         reddit: 'Comunidades técnicas y de producto; prueba pequeña por falta de datos en España.',
+         facebook: 'Dreamdata sitúa a Meta (Facebook, Instagram, WhatsApp) en el 8 % del gasto B2B, sobre todo para remarketing.',
+         microsoft: 'Público de oficina en escritorio; buen complemento para software profesional.' } },
+  { id: 'local', name: 'Servicios locales (reformas, talleres, clínicas, etc.)', type: 'estimate',
+    p: [57,14,6,8,4,5,0,0,6,0,0,0,0],
+    n: { google: 'Quien necesita un fontanero o un taller lo busca en el momento. Search es la vía principal de captación de servicios locales.',
+         facebook: 'Segmentación por radio geográfico y anuncios con formulario; Facebook llega bien a propietarios adultos.',
+         whatsapp: 'Anuncios que abren un chat para pedir presupuesto: encaja de forma natural en servicios locales.',
+         microsoft: 'Complemento barato de búsqueda; en España ronda el 4 % de las búsquedas.' } },
+  { id: 'salud', name: 'Salud, deporte y bienestar', type: 'estimate',
+    p: [40,9,15,6,8,12,0,0,4,4,0,0,2],
+    n: { google: 'Búsquedas de gimnasio, fisioterapia o clínica cercana con intención clara.',
+         instagram: 'Instagram es la red de referencia en contenido de deporte y bienestar.',
+         whatsapp: 'Reservar cita o clase de prueba por chat reduce la fricción.',
+         tiktok: 'Contenido fitness y de hábitos saludables con gran alcance en público joven.',
+         amazon: 'Para servicios no aplica; si vendes suplementos o material deportivo, súbelo manualmente.' } },
+  { id: 'educacion', name: 'Educación, formación y cursos', type: 'estimate',
+    p: [38,9,11,5,12,10,8,1,4,0,0,2,0],
+    n: { google: 'Búsquedas de "curso de…" o "máster en…" con intención alta en momentos de matrícula.',
+         linkedin: 'Útil para formación de posgrado y profesional, segmentando por cargo y sector.',
+         youtube: 'Las clases de muestra y testimonios en vídeo generan confianza.',
+         tiktok: 'Llega al público joven que elige estudios.',
+         whatsapp: 'Muchos interesados prefieren preguntar por chat precios, horarios y plazas.' } },
+  { id: 'inmobiliaria', name: 'Inmobiliaria', type: 'estimate',
+    p: [45,18,10,7,8,4,3,0,5,0,0,0,0],
+    n: { google: 'Búsquedas de "pisos en venta en…" con fuerte intención. Nota: los portales de clasificados (6,8 % del digital) no se incluyen aquí.',
+         facebook: 'Segmentación geográfica y formularios de captación para vender o alquilar; llega al comprador adulto.',
+         whatsapp: 'Los interesados piden visita o información por chat de forma inmediata.',
+         linkedin: 'Pequeña partida para inmobiliaria comercial o inversores.' } },
+  { id: 'automocion', name: 'Automoción y motor', type: 'estimate',
+    p: [38,11,7,4,20,8,0,3,5,0,0,2,2],
+    n: { google: 'Búsqueda de modelos, concesionarios y talleres; en automoción el contacto por búsqueda es de los más baratos (28,50 $ según LocaliQ).',
+         youtube: 'El vídeo es clave en motor: pruebas y presentaciones. YouTube tiene el mayor alcance en España.',
+         facebook: 'Segmentación por intereses y formularios para pedir prueba o presupuesto.' } },
+  { id: 'finanzas', name: 'Finanzas, banca y seguros', type: 'estimate',
+    p: [45,9,6,3,10,5,10,3,7,0,0,2,0],
+    n: { google: 'Comparativas de seguros, hipotecas o cuentas: búsquedas con alta intención y alto valor.',
+         linkedin: 'Para productos financieros profesionales o perfiles de renta alta.',
+         microsoft: 'El público de Bing en escritorio suele ser adulto y de oficina, interesante en finanzas.' } },
+  { id: 'ocio', name: 'Ocio, videojuegos y entretenimiento', type: 'estimate',
+    p: [18,8,13,1,22,20,0,5,0,0,3,6,4],
+    n: { youtube: 'Tráilers y contenido en vídeo son el formato natural del entretenimiento.',
+         tiktok: 'Gran alcance en público joven y viralidad para estrenos, eventos o juegos.',
+         reddit: 'Comunidades de gaming y fans muy activas; prueba con presupuesto moderado.',
+         x: 'Conversación en tiempo real útil en lanzamientos y eventos, aunque con audiencia menor.',
+         instagram: 'Reels y Stories dan visibilidad a eventos, estrenos y planes de ocio.' } },
+  { id: 'otro', name: 'Otro producto o servicio', type: 'other',
+    p: [34,10,12,2,12,8,4,2,4,3,5,2,2],
+    n: {} }
+];
+
+/* Palabras clave para asociar lo que el usuario escribe en "Otro" a una categoría.
+   Texto sin tildes y en minúsculas. Las de 4 letras o menos solo cuentan como palabra completa. */
+const KEYWORDS = {
+  moda:         ['ropa','moda','camiseta','vestido','zapat','calzado','bolso','complemento','joya','bisuter','reloj','gafas','pantalon','lenceria','abrigo','sombrero','boutique'],
+  belleza:      ['cosmet','maquillaje','belleza','perfum','crema','peluquer','barber','estetica','manicura','pedicura','skincare','champu','depilacion','tatuaje'],
+  electronica:  ['movil','moviles','telefono','ordenador','portatil','tecnolog','electron','gadget','auricular','tablet','consola','televisor','camara','informatic','smartwatch','drone'],
+  hogar:        ['mueble','decora','hogar','sofa','colchon','cocina','jardin','lampara','menaje','alfombra','bricolaje','cortina','iluminacion','ceramica'],
+  alimentacion: ['aliment','comida','bebida','vino','vinos','cerveza','cafe','aceite','snack','gourmet','chocolate','supermercado','fruta','queso','jamon','miel','panaderia','pasteleria','conserva'],
+  restauracion: ['restaurante','bar','bares','cafeteria','pizzeria','hamburgues','catering','hosteleria','tapas','marisqueria','asador','heladeria','food truck'],
+  turismo:      ['hotel','viaje','turismo','turistic','alojamiento','casa rural','camping','excursion','tour','vuelo','crucero','agencia de viajes','hostal','bicicleta','kayak','senderismo','surf'],
+  b2b:          ['consultor','asesor','gestoria','b2b','empresas','auditor','outsourcing','logistica','industrial','maquinaria','distribuidor','mayorista','traduccion','recursos humanos','seleccion de personal','agencia de marketing','imprenta','packaging'],
+  saas:         ['software','saas','app','aplicacion','crm','erp','plataforma digital','desarrollo web','hosting','ciberseguridad','cloud','inteligencia artificial'],
+  local:        ['reforma','fontaner','electricista','taller','cerrajer','limpieza','mudanza','pintor','abogado','dentista','dental','veterinar','lavanderia','fotograf','carpinter','climatizacion','persianas','autonomo','mascota','canin','perro','perros','gato','gatos','felino'],
+  salud:        ['gimnasio','gym','fisioterap','nutricion','nutricionista','yoga','pilates','psicolog','salud','bienestar','deporte','deportivo','entrenador','suplement','masaje','farmacia','clinica','crossfit','dieta'],
+  educacion:    ['curso','cursos','formacion','academia','escuela','colegio','universidad','master','clases','idioma','idiomas','oposicion','tutoria','ensenanza','autoescuela','guarderia'],
+  inmobiliaria: ['inmobiliari','piso','pisos','vivienda','casa en venta','local comercial','promotora','obra nueva','alquiler de pisos','chalet'],
+  automocion:   ['coche','coches','moto','motos','vehiculo','concesionario','automovil','neumatic','recambio','furgoneta','caravana','autocaravana'],
+  finanzas:     ['banco','seguro','seguros','prestamo','hipoteca','inversion','financ','credito','fintech','cripto','contabilidad','pension'],
+  ocio:         ['videojuego','juego','juegos','evento','eventos','concierto','cine','teatro','entretenimiento','escape room','festival','musica','ocio','parque','espectaculo','libro','libros','editorial','juguete','discoteca']
+};
+
+function normalize(t) {
+  return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ñ/g, 'n');
+}
+
+/* Devuelve las categorías que mejor encajan con el texto (empate = varias) */
+function matchOther(text) {
+  const t = ' ' + normalize(text).replace(/[^a-z0-9]+/g, ' ') + ' ';
+  const scores = Object.entries(KEYWORDS).map(([id, kws]) => {
+    const score = kws.reduce((acc, kw) => {
+      const re = kw.length <= 4 ? new RegExp(' ' + kw + ' ') : new RegExp(' ' + kw);
+      return acc + (re.test(t) ? 1 : 0);
+    }, 0);
+    return { id, score };
+  });
+  const best = Math.max(...scores.map(s => s.score));
+  if (best === 0) return [];
+  return scores.filter(s => s.score === best).map(s => PRODUCTS.find(p => p.id === s.id));
+}
+
+/* Construye el perfil de "Otro": el de la categoría detectada, la media si hay varias, o el genérico */
+function buildOtherProfile(text) {
+  const generic = PRODUCTS.find(p => p.id === 'otro');
+  const matches = matchOther(text);
+  if (!matches.length) return { ...generic, matched: [] };
+  const avg = PLATFORMS.map((_, i) => matches.reduce((a, m) => a + m.p[i], 0) / matches.length);
+  const n = {};
+  matches.slice().reverse().forEach(m => Object.assign(n, m.n));
+  return { id: 'otro', name: generic.name, type: 'other', p: distribute(100, avg), n,
+           matched: matches, direct: matches.every(m => m.type === 'direct') };
+}
+
+const OTHER_NOTE = 'Para "Otro" se usa un <strong>reparto genérico</strong> que reproduce la estructura del mercado digital español en 2025: Search 32,1 % y Redes Sociales 29,5 % [1], repartidos según la cuota de buscadores [4] y la audiencia publicitaria de cada red [3]. Es una <strong>estimación razonada</strong>; ajústala a tu caso.';
+
+/* ===================== ESTADO ===================== */
+let state = { product: null, budget: 0, pct: [], base: [], locked: [], manual: [] };
+let chart = null;
+
+const $ = (id) => document.getElementById(id);
+const eur = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+
+/* ===================== TEMA ===================== */
+function applyTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  $('themeIcon').className = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  const label = dark ? 'Activar modo claro' : 'Activar modo oscuro';
+  $('themeBtn').setAttribute('aria-label', label);
+  $('themeBtn').title = label;
+  if (chart) updateChartColors();
+}
+$('themeBtn').addEventListener('click', () => {
+  const dark = !document.documentElement.classList.contains('dark');
+  applyTheme(dark);
+  try { localStorage.setItem('tema', dark ? 'oscuro' : 'claro'); } catch (e) {}
+});
+try { if (localStorage.getItem('tema') === 'oscuro') applyTheme(true); } catch (e) {}
+
+/* ===================== FORMULARIO ===================== */
+PRODUCTS.forEach(p => {
+  const o = document.createElement('option');
+  o.value = p.id; o.textContent = p.name;
+  $('product').appendChild(o);
+});
+$('product').addEventListener('change', () => {
+  $('otherWrap').hidden = $('product').value !== 'otro';
+});
+
+SOURCES.forEach(s => {
+  const li = document.createElement('li');
+  li.id = 'fuente-' + s.id;
+  li.innerHTML = `<a href="${s.url}" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">${s.name}</a>
+    <span class="block text-slate-600 dark:text-slate-400">${s.note}</span>`;
+  $('sources').appendChild(li);
+});
+
+$('form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const pid = $('product').value;
+  const budget = parseFloat(String($('budget').value).replace(',', '.'));
+  const err = $('formError');
+  if (!pid) { err.textContent = 'Elige un tipo de producto o servicio.'; err.hidden = false; return; }
+  if (pid === 'otro' && !$('otherText').value.trim()) { err.textContent = 'Escribe cuál es tu producto o servicio.'; err.hidden = false; return; }
+  if (!isFinite(budget) || budget <= 0) { err.textContent = 'Introduce un presupuesto en euros mayor que 0.'; err.hidden = false; return; }
+  err.hidden = true;
+  const prod = pid === 'otro' ? buildOtherProfile($('otherText').value) : PRODUCTS.find(p => p.id === pid);
+  state = { product: prod, budget, pct: prod.p.slice(), base: prod.p.slice(),
+            locked: PLATFORMS.map(() => false), manual: PLATFORMS.map(() => false) };
+  renderResult();
+  $('result').hidden = false;
+  $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+/* El presupuesto se puede cambiar después y los importes se actualizan al momento */
+$('budget').addEventListener('input', () => {
+  if (!state.product) return;
+  const b = parseFloat(String($('budget').value).replace(',', '.'));
+  if (isFinite(b) && b > 0) { state.budget = b; refresh(); }
+});
+
+$('resetBtn').addEventListener('click', () => {
+  state.pct = state.base.slice();
+  state.locked = PLATFORMS.map(() => false);
+  state.manual = PLATFORMS.map(() => false);
+  refresh(true);
+});
+
+/* ===================== LÓGICA DE REAJUSTE ===================== */
+/* Reparte un total entero entre pesos usando el método del mayor resto, para que la suma sea exacta */
+function distribute(total, weights) {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (total <= 0 || sum <= 0) return weights.map(() => 0);
+  const raw = weights.map(w => total * w / sum);
+  const out = raw.map(Math.floor);
+  let rest = total - out.reduce((a, b) => a + b, 0);
+  raw.map((r, i) => [r - Math.floor(r), i]).sort((a, b) => b[0] - a[0])
+     .forEach(([, i]) => { if (rest > 0 && weights[i] > 0) { out[i]++; rest--; } });
+  return out;
+}
+
+/* Las plataformas que participan en el reajuste: no fijadas, y recomendadas (>0 %) o subidas a mano */
+function poolFor(i) {
+  return PLATFORMS.map((_, j) => j).filter(j => j !== i && !state.locked[j] && (state.base[j] > 0 || state.manual[j]));
+}
+
+/* Valor máximo que puede tomar la plataforma i */
+function maxFor(i) {
+  const pool = poolFor(i);
+  const fixed = state.pct.reduce((acc, v, j) => (j !== i && !pool.includes(j)) ? acc + v : acc, 0);
+  return pool.length ? 100 - fixed : state.pct[i];
+}
+
+function setPct(i, v) {
+  const pool = poolFor(i);
+  if (!pool.length) return; // nada que reajustar: el valor no puede cambiar
+  const fixed = state.pct.reduce((acc, val, j) => (j !== i && !pool.includes(j)) ? acc + val : acc, 0);
+  v = Math.max(0, Math.min(100 - fixed, Math.round(v)));
+  if (state.base[i] === 0) state.manual[i] = v > 0;
+  const remaining = 100 - fixed - v;
+  let weights = pool.map(j => state.pct[j]);
+  if (weights.every(w => w === 0)) weights = pool.map(j => state.base[j] || 1);
+  const parts = distribute(remaining, weights);
+  state.pct[i] = v;
+  pool.forEach((j, k) => { state.pct[j] = parts[k]; });
+  refresh();
+}
+
+/* ===================== RENDER ===================== */
+function explanation(i) {
+  const k = PLATFORMS[i].key;
+  const prod = state.product;
+  if (state.pct[i] === 0 && state.base[i] === 0) return prod.n[k] || ZERO[k];
+  if (state.base[i] === 0 && state.pct[i] > 0) return 'No se recomendaba para este tipo de producto, pero la has subido manualmente. ' + GENERIC[k];
+  return prod.n[k] || GENERIC[k];
+}
+
+function sourceLinks(arr) {
+  return arr.map(n => `<a href="#fuente-${n}" class="text-indigo-600 dark:text-indigo-300 hover:underline">[${n}]</a>`).join('');
+}
+
+function renderResult() {
+  const prod = state.product;
+  const label = prod.id === 'otro' ? `Otro: «${$('otherText').value.trim()}»` : prod.name;
+  $('resTitle').textContent = 'Reparto recomendado · ' + label;
+  const note = $('dataNote');
+  if (prod.type === 'direct') {
+    note.className = 'mt-4 rounded-xl p-3 text-sm bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-100 dark:border-emerald-800';
+    note.innerHTML = '<i class="fa-solid fa-circle-check mr-1.5"></i>' + DIRECT_B2B;
+  } else if (prod.type === 'other') {
+    note.className = 'mt-4 rounded-xl p-3 text-sm bg-sky-50 text-sky-900 border border-sky-200 dark:bg-sky-950/50 dark:text-sky-100 dark:border-sky-800';
+    if (prod.matched.length) {
+      const names = prod.matched.map(m => '«' + m.name + '»').join(' y ');
+      const how = prod.matched.length > 1
+        ? `Por lo que has escrito, tu caso se parece a ${names}, así que se usa la <strong>media de sus repartos</strong>.`
+        : `Por lo que has escrito, tu caso se parece a ${names}, así que se usa <strong>su reparto</strong> como punto de partida.`;
+      note.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>' + how +
+        ' La asociación se hace por palabras clave y es una <strong>estimación razonada</strong>; si no encaja, elige directamente la categoría más parecida en la lista o ajusta los porcentajes.';
+    } else {
+      note.innerHTML = '<i class="fa-solid fa-circle-info mr-1.5"></i>No hemos reconocido tu producto o servicio entre las categorías de la lista. ' + OTHER_NOTE;
+    }
+  } else {
+    note.className = 'mt-4 rounded-xl p-3 text-sm bg-slate-100 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700';
+    note.innerHTML = '<i class="fa-solid fa-scale-balanced mr-1.5"></i>' + ESTIMATE;
+  }
+  buildCards();
+  buildChart();
+  refresh();
+}
+
+function buildCards() {
+  const wrap = $('cards');
+  wrap.innerHTML = '';
+  PLATFORMS.forEach((pl, i) => {
+    const c = document.createElement('article');
+    c.className = 'rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-4 flex flex-col gap-3 transition';
+    c.id = 'card-' + i;
+    c.innerHTML = `
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white text-xl shrink-0" style="background:${pl.key === 'tiktok' || pl.key === 'x' ? '#111827' : pl.color}">
+          <i class="${pl.icon}"></i>
+        </div>
+        <h3 class="font-bold leading-tight flex-1 min-w-0">${pl.name}</h3>
+        <span data-eur class="text-lg font-extrabold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">0 €</span>
+        <div class="text-right whitespace-nowrap pl-3 border-l border-slate-200 dark:border-slate-700">
+          <span class="text-xl font-extrabold" data-pct>0</span><span class="text-base font-bold"> %</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="range" min="0" max="100" step="1" class="flex-1" data-range aria-label="Porcentaje para ${pl.name}">
+        <input type="number" min="0" max="100" step="1" inputmode="numeric" data-num aria-label="Porcentaje exacto para ${pl.name}"
+          class="w-16 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-right">
+        <button type="button" data-lock class="w-9 h-9 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500" title="Fijar este porcentaje" aria-label="Fijar el porcentaje de ${pl.name}">
+          <i class="fa-solid fa-lock-open"></i>
+        </button>
+      </div>
+      <p class="text-sm text-slate-600 dark:text-slate-300 clamp3" data-why></p>
+      <div class="flex items-center justify-between text-xs">
+        <span data-badge class="rounded-full px-2 py-0.5 font-medium"></span>
+        <span class="text-slate-500 dark:text-slate-400">Fuentes: ${sourceLinks(pl.src)}</span>
+      </div>`;
+    const range = c.querySelector('[data-range]');
+    const num = c.querySelector('[data-num]');
+    range.addEventListener('input', () => setPct(i, Number(range.value)));
+    num.addEventListener('change', () => setPct(i, Number(num.value) || 0));
+    c.querySelector('[data-lock]').addEventListener('click', () => { state.locked[i] = !state.locked[i]; refresh(); });
+    wrap.appendChild(c);
+  });
+}
+
+function buildChart() {
+  if (chart) chart.destroy();
+  const ctx = $('chart');
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: PLATFORMS.map(p => p.name),
+      datasets: [{ data: state.pct.slice(), backgroundColor: PLATFORMS.map(p => p.color), borderRadius: 6, barThickness: 'flex', maxBarThickness: 28 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 250 },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => ` ${c.raw} % · ${eur.format(state.budget * c.raw / 100)}` } }
+      },
+      scales: {
+        x: { min: 0, max: 100, ticks: { callback: v => v + ' %' } },
+        y: { ticks: { autoSkip: false } }
+      }
+    }
+  });
+  updateChartColors();
+}
+
+function updateChartColors() {
+  const dark = document.documentElement.classList.contains('dark');
+  const txt = dark ? '#cbd5e1' : '#334155';
+  const grid = dark ? 'rgba(148,163,184,.15)' : 'rgba(100,116,139,.15)';
+  chart.options.scales.x.ticks.color = txt;
+  chart.options.scales.y.ticks.color = txt;
+  chart.options.scales.x.grid.color = grid;
+  chart.options.scales.y.grid.color = grid;
+  chart.update('none');
+}
+
+function refresh(rebuildChart) {
+  const total = state.pct.reduce((a, b) => a + b, 0);
+  $('totalPct').textContent = total;
+  $('totalEur').textContent = eur.format(state.budget);
+  const active = state.pct.filter(v => v > 0).length;
+  $('resSummary').textContent = `Presupuesto de ${eur.format(state.budget)} repartido entre ${active} plataformas.`;
+
+  PLATFORMS.forEach((pl, i) => {
+    const c = $('card-' + i);
+    const v = state.pct[i];
+    c.querySelector('[data-pct]').textContent = v;
+    c.querySelector('[data-eur]').textContent = eur.format(state.budget * v / 100);
+    const range = c.querySelector('[data-range]');
+    const num = c.querySelector('[data-num]');
+    range.value = v; num.value = v;
+    const locked = state.locked[i];
+    range.disabled = locked; num.disabled = locked;
+    const lockBtn = c.querySelector('[data-lock]');
+    lockBtn.innerHTML = locked ? '<i class="fa-solid fa-lock"></i>' : '<i class="fa-solid fa-lock-open"></i>';
+    lockBtn.className = 'w-9 h-9 rounded-lg border transition ' + (locked
+      ? 'border-indigo-500 bg-indigo-600 text-white'
+      : 'border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500');
+    lockBtn.title = locked ? 'Desbloquear este porcentaje' : 'Fijar este porcentaje';
+    c.querySelector('[data-why]').textContent = explanation(i);
+    c.classList.toggle('card-zero', v === 0);
+    const badge = c.querySelector('[data-badge]');
+    if (state.base[i] === 0 && v === 0) {
+      badge.textContent = 'No encaja';
+      badge.className = 'rounded-full px-2 py-0.5 font-medium bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
+    } else if ((state.product.type === 'direct' || state.product.direct) &&['linkedin','google','facebook','instagram','youtube'].includes(pl.key)) {
+      badge.textContent = 'Dato directo (B2B)';
+      badge.className = 'rounded-full px-2 py-0.5 font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100';
+    } else {
+      badge.textContent = 'Estimación razonada';
+      badge.className = 'rounded-full px-2 py-0.5 font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100';
+    }
+  });
+
+  if (chart) {
+    chart.data.datasets[0].data = state.pct.slice();
+    chart.update(rebuildChart ? undefined : 'none');
+  }
+}
+</script>
+</body>
+</html>
