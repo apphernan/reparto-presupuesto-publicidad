@@ -4,7 +4,7 @@ Web app en español que ayuda a decidir cómo repartir un presupuesto de publici
 
 ## Cómo usarla
 
-Abre `index.html` con doble clic en cualquier navegador. Necesita conexión a internet porque carga Tailwind CSS, Chart.js y Font Awesome desde CDN.
+Úsala online en **https://apphernan.github.io/reparto-presupuesto-publicidad/** o abre `index.html` con doble clic en cualquier navegador. Necesita conexión a internet porque carga Tailwind CSS, Chart.js y Font Awesome desde CDN.
 
 1. Elige el tipo de producto o servicio (o «Otro» y escríbelo).
 2. Introduce tu presupuesto total en euros.
